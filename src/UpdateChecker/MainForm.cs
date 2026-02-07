@@ -252,8 +252,13 @@ public sealed class MainForm : Form
             var winget = WingetRunner.FindWinget();
             if (winget == null)
             {
-                AppendLog("FEHLER: winget nicht gefunden!");
-                return;
+                AppendLog("winget nicht gefunden – versuche Installation...");
+                winget = WingetRunner.InstallWinget(msg => AppendLog(msg));
+                if (winget == null)
+                {
+                    AppendLog("FEHLER: winget konnte nicht installiert werden!");
+                    return;
+                }
             }
             AppendLog($"winget: {winget}");
             AppendLog("Pruefe auf Updates...");

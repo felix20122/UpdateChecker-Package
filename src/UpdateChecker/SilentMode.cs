@@ -30,10 +30,15 @@ public static class SilentMode
         var winget = WingetRunner.FindWinget();
         if (winget == null)
         {
-            logger.Log("winget nicht gefunden!", "ERROR");
-            ToastNotifier.Show("Update-Checker Fehler",
-                "winget nicht verfuegbar! Bitte App Installer aus dem Microsoft Store installieren.");
-            return;
+            logger.Log("winget nicht gefunden – versuche Installation...");
+            winget = WingetRunner.InstallWinget(msg => logger.Log(msg));
+            if (winget == null)
+            {
+                logger.Log("winget konnte nicht installiert werden!", "ERROR");
+                ToastNotifier.Show("Update-Checker Fehler",
+                    "winget nicht verfuegbar und konnte nicht installiert werden!");
+                return;
+            }
         }
         logger.Log($"winget: {winget}");
 
