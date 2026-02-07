@@ -1,0 +1,15 @@
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.cache
+publish/
+publish2/
+tools/
+Logs/
+nul
+.vs/
+.claude/
+*.user
+*.suo
