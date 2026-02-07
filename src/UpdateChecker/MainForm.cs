@@ -18,13 +18,15 @@ public sealed class MainForm : Form
     private readonly Button _installButton;
     private readonly Button _uninstallButton;
     private readonly Button _checkNowButton;
+    private readonly Button _updateButton;
+    private readonly Label _versionLabel;
     private readonly TextBox _logBox;
 
     public MainForm()
     {
         Text = "UpdateChecker";
-        Size = new Size(600, 520);
-        MinimumSize = new Size(500, 420);
+        Size = new Size(620, 520);
+        MinimumSize = new Size(520, 420);
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 9.5f);
         BackColor = Color.FromArgb(245, 245, 245);
@@ -82,6 +84,19 @@ public sealed class MainForm : Form
         _checkNowButton.Location = new Point(260, 196);
         _checkNowButton.Click += OnCheckNowClick;
 
+        _updateButton = CreateButton("Update", Color.FromArgb(140, 80, 200));
+        _updateButton.Location = new Point(380, 196);
+        _updateButton.Click += OnUpdateClick;
+
+        _versionLabel = new Label
+        {
+            Text = $"v{SelfUpdater.CurrentVersion.ToString(3)}",
+            Font = new Font("Segoe UI", 9f),
+            ForeColor = Color.FromArgb(150, 150, 150),
+            AutoSize = true,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
+        };
+
         // --- Log ---
         var logLabel = new Label
         {
@@ -105,7 +120,7 @@ public sealed class MainForm : Form
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        Controls.AddRange(new Control[] { titleLabel, subtitleLabel, statusGroup, _installButton, _uninstallButton, _checkNowButton, logLabel, _logBox });
+        Controls.AddRange(new Control[] { titleLabel, subtitleLabel, _versionLabel, statusGroup, _installButton, _uninstallButton, _checkNowButton, _updateButton, logLabel, _logBox });
 
         // Initial sizing
         Resize += (_, _) => AdjustLayout();
@@ -120,6 +135,8 @@ public sealed class MainForm : Form
 
         var statusGroup = Controls.OfType<GroupBox>().First();
         statusGroup.Width = w - 40;
+
+        _versionLabel.Location = new Point(w - _versionLabel.Width - 20, 20);
 
         _logBox.Width = w - 40;
         _logBox.Height = h - _logBox.Top - 16;
@@ -240,6 +257,49 @@ public sealed class MainForm : Form
             AppendLog("Abgeschlossen.");
 
         return success;
+    }
+
+    private async void OnUpdateClick(object? sender, EventArgs e)
+    {
+        _updateButton.Enabled = false;
+
+        var (newVersion, downloadUrl) = await SelfUpdater.CheckForUpdateAsync(AppendLog);
+
+        if (newVersion == null || downloadUrl == null)
+        {
+            _updateButton.Enabled = true;
+            return;
+        }
+
+        AppendLog($"Neue Version verfuegbar: {newVersion}");
+
+        if (MessageBox.Show(
+                $"Version {newVersion.ToString(3)} ist verfuegbar.\nJetzt aktualisieren?",
+                "Update verfuegbar",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+        {
+            _updateButton.Enabled = true;
+            return;
+        }
+
+        var downloaded = await SelfUpdater.DownloadUpdateAsync(downloadUrl, AppendLog);
+        if (!downloaded)
+        {
+            _updateButton.Enabled = true;
+            return;
+        }
+
+        AppendLog("Starte Update (erfordert Admin-Rechte)...");
+        var success = await RunElevatedAndReport($"/selfupdate {Environment.ProcessId}");
+
+        if (success)
+        {
+            AppendLog("Update wird angewendet. Anwendung wird beendet...");
+            Application.Exit();
+            return;
+        }
+
+        _updateButton.Enabled = true;
     }
 
     private async void OnCheckNowClick(object? sender, EventArgs e)

@@ -48,6 +48,20 @@ static class Program
                 Environment.Exit(uninstallOk ? 0 : 1);
                 break;
 
+            case "/selfupdate":
+                if (!IsAdmin())
+                {
+                    RelaunchElevated(string.Join(" ", args));
+                    return;
+                }
+                int updatePid = 0;
+                if (args.Length > 1)
+                    int.TryParse(args[1], out updatePid);
+                var (updateOk, updateMsg) = SelfUpdater.ApplyUpdate(updatePid);
+                WriteResult(updateOk, updateMsg);
+                Environment.Exit(updateOk ? 0 : 1);
+                break;
+
             default:
                 Application.SetHighDpiMode(HighDpiMode.SystemAware);
                 Application.EnableVisualStyles();

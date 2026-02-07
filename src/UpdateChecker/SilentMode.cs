@@ -26,6 +26,38 @@ public static class SilentMode
         }
         logger.Log("Netzwerk verfuegbar.");
 
+        // Self-update check
+        logger.Log("Pruefe auf UpdateChecker-Eigenupdates...");
+        try
+        {
+            var (newVersion, downloadUrl) = SelfUpdater.CheckForUpdateAsync(msg => logger.Log(msg))
+                .GetAwaiter().GetResult();
+
+            if (newVersion != null && downloadUrl != null)
+            {
+                logger.Log($"Neue Version {newVersion} gefunden – lade herunter...");
+                var downloaded = SelfUpdater.DownloadUpdateAsync(downloadUrl, msg => logger.Log(msg))
+                    .GetAwaiter().GetResult();
+
+                if (downloaded)
+                {
+                    logger.Log("Wende Self-Update an...");
+                    var (ok, msg) = SelfUpdater.ApplyUpdate(System.Diagnostics.Process.GetCurrentProcess().Id);
+                    logger.Log(ok ? "Self-Update gestartet. Beende Prozess." : $"Self-Update fehlgeschlagen: {msg}");
+
+                    if (ok)
+                    {
+                        logger.Log("Update-Checker beendet (Self-Update).");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Log($"Self-Update Fehler: {ex.Message}");
+        }
+
         // Find winget
         var winget = WingetRunner.FindWinget();
         if (winget == null)
