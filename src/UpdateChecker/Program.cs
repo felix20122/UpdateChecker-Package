@@ -37,10 +37,13 @@ static class Program
             case "/uninstall":
                 if (!IsAdmin())
                 {
-                    RelaunchElevated("/uninstall");
+                    RelaunchElevated(string.Join(" ", args));
                     return;
                 }
-                var (uninstallOk, uninstallMsg) = AppUninstaller.Uninstall();
+                int guiPid = 0;
+                if (args.Length > 1)
+                    int.TryParse(args[1], out guiPid);
+                var (uninstallOk, uninstallMsg) = AppUninstaller.Uninstall(guiPid);
                 WriteResult(uninstallOk, uninstallMsg);
                 Environment.Exit(uninstallOk ? 0 : 1);
                 break;

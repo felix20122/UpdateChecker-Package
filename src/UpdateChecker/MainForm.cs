@@ -198,11 +198,20 @@ public sealed class MainForm : Form
 
         _uninstallButton.Enabled = false;
         AppendLog("Starte Deinstallation (erfordert Admin-Rechte)...");
-        await RunElevatedAndReport("/uninstall");
+
+        // Pass our PID so the elevated cleanup PowerShell can wait for us to exit
+        var success = await RunElevatedAndReport($"/uninstall {Environment.ProcessId}");
+
+        if (success)
+        {
+            Application.Exit();
+            return;
+        }
+
         RefreshStatus();
     }
 
-    private async Task RunElevatedAndReport(string flag)
+    private async Task<bool> RunElevatedAndReport(string flag)
     {
         var exePath = Environment.ProcessPath!;
         var exitCode = await Task.Run(() =>
@@ -229,6 +238,8 @@ public sealed class MainForm : Form
             AppendLog($"Fehlgeschlagen: {message}");
         else
             AppendLog("Abgeschlossen.");
+
+        return success;
     }
 
     private async void OnCheckNowClick(object? sender, EventArgs e)

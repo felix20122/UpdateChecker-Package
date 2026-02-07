@@ -7,6 +7,7 @@
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <RootNamespace>UpdateChecker</RootNamespace>
     <AssemblyName>UpdateChecker</AssemblyName>
+    <Version>1.1.0</Version>
     <Nullable>enable</Nullable>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <ApplicationIcon>app.ico</ApplicationIcon>
